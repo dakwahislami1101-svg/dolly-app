@@ -1,0 +1,17 @@
+{
+  "name": "Dolly Dating App",
+  "short_name": "Dolly",
+  "description": "Temukan pasangan impianmu dan mulailah perjalanan cinta di Dolly",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f43f5e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.jpg",
+      "type": "image/jpeg",
+      "sizes": "1000x1000"
+    }
+  ]
+}

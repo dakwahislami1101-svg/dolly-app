@@ -1,0 +1,8 @@
+{
+  "name": "Dolly",
+  "description": "Aplikasi obrolan mirip MiChat dengan fitur pencarian orang terdekat, ruang obrolan interaktif, dan berbagi status (moments).",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

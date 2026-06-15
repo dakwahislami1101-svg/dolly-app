@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth & Base helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Ensures user changes their own profile
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Checking for dummy people, statuses and requests used during first run seeding
+    function isDummyProfile(id) {
+      return id == 'aisha' || id == 'ben' || id == 'chandra' || id == 'dini' || id == 'eko' || id == 'fiona' || id == 'leo' || id == 'maya' || id == 'sarah';
+    }
+
+    function isDummyStatus(id) {
+      return id == 'st_aisha' || id == 'st_ben' || id == 'st_dini';
+    }
+
+    function isDummyRequest(id) {
+      return id == 'req_rio' || id == 'req_dina';
+    }
+
+    // Verifies document visual target ID length & regex
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Profiles Rules
+    match /profiles/{userId} {
+      allow read: if isSignedIn();
+      allow create: if (isOwner(userId) && isValidProfile(incoming())) || (isSignedIn() && isDummyProfile(userId));
+      allow update: if (isOwner(userId) && isValidProfile(incoming())) || (isSignedIn() && isDummyProfile(userId));
+    }
+
+    function isValidProfile(data) {
+      return data.keys().hasAll(['id', 'name', 'avatar', 'bio']) 
+        && data.keys().size() <= 10
+        && (data.id == request.auth.uid || isDummyProfile(data.id))
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.avatar is string && data.avatar.size() <= 200000
+        && data.bio is string && data.bio.size() <= 500
+        && (!('gender' in data) || (data.gender == 'Laki-laki' || data.gender == 'Perempuan'))
+        && (!('online' in data) || data.online is bool)
+        && (!('distance' in data) || (data.distance is string && data.distance.size() <= 50))
+        && (!('statusMessage' in data) || (data.statusMessage is string && data.statusMessage.size() <= 150));
+    }
+
+    // 3. Statuses (Moments Feed)
+    match /statuses/{statusId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(statusId) && isValidStatus(incoming()) && (incoming().personId == request.auth.uid || isDummyProfile(incoming().personId));
+      allow update: if isSignedIn() && isValidId(statusId) && (
+        // Allow original publisher to modify
+        ((existing().personId == request.auth.uid || isDummyProfile(existing().personId)) && isValidStatus(incoming()) && incoming().personId == existing().personId) ||
+        // Allow anyone signed-in to toggle likes
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likes']) && incoming().personId == existing().personId)
+      );
+      allow delete: if isSignedIn() && (existing().personId == request.auth.uid || isDummyProfile(existing().personId));
+      
+      // Comments inside a status
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isValidId(commentId) && isValidComment(incoming());
+        allow delete: if isSignedIn() && (
+          existing().authorName is string || 
+          get(/databases/$(database)/documents/statuses/$(statusId)).data.personId == request.auth.uid
+        );
+      }
+    }
+
+    function isValidStatus(data) {
+      return data.keys().hasAll(['id', 'personId', 'authorName', 'authorAvatar', 'text'])
+        && data.keys().size() <= 8
+        && data.id is string && data.id.size() <= 128
+        && (data.personId == request.auth.uid || isDummyProfile(data.personId))
+        && data.authorName is string && data.authorName.size() <= 100
+        && data.authorAvatar is string && data.authorAvatar.size() <= 200000
+        && data.text is string && data.text.size() <= 2000
+        && (!('image' in data) || (data.image is string && data.image.size() <= 1000))
+        && (!('likes' in data) || (data.likes is list && data.likes.size() <= 200));
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['id', 'authorName', 'text', 'createdAt'])
+        && data.keys().size() == 4
+        && data.id is string && data.id.size() <= 128
+        && data.authorName is string && data.authorName.size() <= 100
+        && data.text is string && data.text.size() <= 1000;
+    }
+
+    // 4. Friend Requests Rules
+    match /requests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(requestId) && isValidRequest(incoming()) && (incoming().personId == request.auth.uid || isDummyRequest(requestId) || incoming().personId == 'rio' || incoming().personId == 'dina');
+      allow update: if isSignedIn() && isValidId(requestId) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status']) && (incoming().status == 'pending' || incoming().status == 'accepted' || incoming().status == 'rejected')
+      );
+      allow delete: if isSignedIn() && (existing().personId == request.auth.uid || isDummyRequest(requestId));
+    }
+
+    function isValidRequest(data) {
+      return data.keys().hasAll(['id', 'personId', 'name', 'avatar', 'status'])
+        && data.keys().size() <= 7
+        && data.id is string
+        && (data.personId == request.auth.uid || isDummyRequest(data.id) || isDummyProfile(data.personId) || data.personId == 'rio' || data.personId == 'dina')
+        && data.name is string && data.name.size() <= 100
+        && data.avatar is string && data.avatar.size() <= 200000
+        && (data.status == 'pending' || data.status == 'accepted' || data.status == 'rejected');
+    }
+
+    // 5. Chats and Messages
+    match /chats/{chatId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidId(chatId) && isValidChat(incoming());
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isValidId(messageId) && isValidMessage(incoming());
+      }
+    }
+
+    function isValidChat(data) {
+      return data.keys().hasAll(['id', 'personId', 'lastMessage', 'timestamp', 'unreadCount'])
+        && data.keys().size() <= 6
+        && data.id is string
+        && data.personId is string
+        && data.lastMessage is string && data.lastMessage.size() <= 1000
+        && data.timestamp is string && data.timestamp.size() <= 100
+        && data.unreadCount is int;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['id', 'senderId', 'text', 'timestamp'])
+        && data.keys().size() <= 7
+        && data.id is string
+        && data.senderId is string
+        && data.text is string && data.text.size() <= 5000
+        && data.timestamp is string && data.timestamp.size() <= 100
+        && (!('unread' in data) || data.unread is bool)
+        && (!('type' in data) || (data.type == 'text' || data.type == 'image' || data.type == 'voice'))
+        && (!('mediaUrl' in data) || (data.mediaUrl is string && data.mediaUrl.size() <= 1000));
+    }
+  }
+}

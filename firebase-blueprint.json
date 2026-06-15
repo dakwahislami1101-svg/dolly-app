@@ -1,0 +1,234 @@
+{
+  "entities": {
+    "Profile": {
+      "title": "Profile",
+      "description": "A user's profile containing their contact and personal details.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique user ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name or display name of the user"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Avatar URL of the user"
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short bio or tagline"
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["Laki-laki", "Perempuan"],
+          "description": "User's gender"
+        },
+        "online": {
+          "type": "boolean",
+          "description": "Whether the user is currently online"
+        },
+        "distance": {
+          "type": "string",
+          "description": "Simulated or real distance to the current user"
+        },
+        "statusMessage": {
+          "type": "string",
+          "description": "A status bubble update message"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated timestamp"
+        }
+      },
+      "required": ["id", "name", "avatar", "bio"]
+    },
+    "Status": {
+      "title": "Status",
+      "description": "A social moment status post shared by users.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique status ID"
+        },
+        "personId": {
+          "type": "string",
+          "description": "The ID of the user who posted the status"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "The display name of the author"
+        },
+        "authorAvatar": {
+          "type": "string",
+          "description": "The avatar URL of the author"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text content of the status"
+        },
+        "image": {
+          "type": "string",
+          "description": "Optional image URL attached to the status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "likes": {
+          "type": "array",
+          "description": "Array of user names who liked this status"
+        }
+      },
+      "required": ["id", "personId", "authorName", "authorAvatar", "text"]
+    },
+    "StatusComment": {
+      "title": "StatusComment",
+      "description": "Comment on a status moment.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "authorName": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "authorName", "text", "createdAt"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A conversation meta record between two participants.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique chat ID, e.g., dual user combination"
+        },
+        "personId": {
+          "type": "string",
+          "description": "The receiver's user ID"
+        },
+        "lastMessage": {
+          "type": "string",
+          "description": "Snippet of the last sent message"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "User readable timestamp of last activity"
+        },
+        "unreadCount": {
+          "type": "integer",
+          "description": "Number of unread messages for this recipient"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "personId", "lastMessage", "timestamp", "unreadCount"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "An individual message record sent within a chat.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "senderId": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "unread": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["text", "image", "voice"]
+        },
+        "mediaUrl": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "senderId", "text", "timestamp"]
+    },
+    "FriendRequest": {
+      "title": "FriendRequest",
+      "description": "A friend request record.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "personId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "age": {
+          "type": "integer"
+        },
+        "avatar": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "rejected"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "personId", "name", "avatar", "status"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": "Profile",
+      "description": "Store each user's profile info keyed by their UID"
+    },
+    "/statuses/{statusId}": {
+      "schema": "Status",
+      "description": "Global feed of shared moments"
+    },
+    "/statuses/{statusId}/comments/{commentId}": {
+      "schema": "StatusComment",
+      "description": "List of user comments on specific moments"
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Active conversational links keyed by combo ID"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Incremental message stream inside the parent chat resource"
+    },
+    "/requests/{requestId}": {
+      "schema": "FriendRequest",
+      "description": "Interactive pending friend request documents"
+    }
+  }
+}
