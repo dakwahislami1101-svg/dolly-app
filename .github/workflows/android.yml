@@ -33,12 +33,12 @@ jobs:
       - name: Build Web App
         run: npm run build
 
-      # Step 5: Set up Java Development Kit (JDK) 17
-      # Modern Android Gradle Plugin requires JDK 17
-      - name: Set up JDK 17
+      # Step 5: Set up Java Development Kit (JDK) 21
+      # Modern Android Gradle Plugin or project configuration requires JDK 21
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'zulu'
           cache: 'gradle'
 
