@@ -14,11 +14,12 @@ interface ChatRoomProps {
   messages: Message[];
   onBack: () => void;
   onSendMessage: (text: string, type?: 'text' | 'image' | 'voice', mediaUrl?: string, incomingSenderId?: string) => void;
+  onViewProfile?: (personId: string) => void;
 }
 
 const EMOJI_SHORTCUTS = ['😀', '😍', '👍', '🙏', '🔥', '🍜', '☕', '😂'];
 
-export function ChatRoom({ person, messages, onBack, onSendMessage }: ChatRoomProps) {
+export function ChatRoom({ person, messages, onBack, onSendMessage, onViewProfile }: ChatRoomProps) {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
@@ -121,20 +122,23 @@ export function ChatRoom({ person, messages, onBack, onSendMessage }: ChatRoomPr
           </button>
           
           {/* Avatar & Status */}
-          <div className="flex items-center space-x-2.5">
+          <div 
+            onClick={() => onViewProfile?.(person.id)}
+            className="flex items-center space-x-2.5 cursor-pointer group"
+          >
             <div className="relative w-10 h-10 shrink-0">
               <img
                 src={person.avatar}
                 alt={person.name}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover rounded-full border border-zinc-100"
+                className="w-full h-full object-cover rounded-full border border-zinc-100 group-hover:scale-105 transition-transform duration-200"
               />
               {person.online && (
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></span>
               )}
             </div>
             <div>
-              <h3 className="text-xs font-bold text-zinc-900 leading-tight">
+              <h3 className="text-xs font-bold text-zinc-900 group-hover:text-rose-500 transition-colors leading-tight">
                 {person.name}
               </h3>
               <span className="text-[10px] text-green-500 font-medium flex items-center">

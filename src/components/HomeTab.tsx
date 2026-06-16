@@ -15,6 +15,7 @@ interface HomeTabProps {
   onOpenChat: (personId: string) => void;
   onAcceptRequest: (requestId: string) => void;
   onRejectRequest: (requestId: string) => void;
+  onViewProfile: (personId: string) => void;
 }
 
 export function HomeTab({
@@ -24,6 +25,7 @@ export function HomeTab({
   onOpenChat,
   onAcceptRequest,
   onRejectRequest,
+  onViewProfile,
 }: HomeTabProps) {
   // Filter out friends from the "Orang Terdekat (Nearby)" list to keep it premium or show the main ones from preview
   // In the screenshot, Aisha, Ben, Chandra, Dini, Eko, Fiona are inside "Nearby".
@@ -62,7 +64,7 @@ export function HomeTab({
             <motion.div
               key={person.id}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onOpenChat(person.id)}
+              onClick={() => onViewProfile(person.id)}
               className="bg-white rounded-2xl p-2.5 flex flex-col items-center justify-center text-center border border-zinc-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] cursor-pointer relative hover:border-rose-100 transition-colors group"
             >
               {/* Avatar Frame */}
@@ -105,7 +107,8 @@ export function HomeTab({
             friends.map((friend) => (
               <div
                 key={friend.id}
-                className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl transition-colors"
+                onClick={() => onViewProfile(friend.id)}
+                className="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-zinc-100 rounded-xl transition-colors cursor-pointer group"
               >
                 {/* Friend Information */}
                 <div className="flex items-center space-x-3">
@@ -114,14 +117,14 @@ export function HomeTab({
                       src={friend.avatar}
                       alt={friend.name}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover rounded-full border border-zinc-50"
+                      className="w-full h-full object-cover rounded-full border border-zinc-50 group-hover:scale-105 transition-transform duration-250"
                     />
                     {friend.online && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white ring-1 ring-green-200"></span>
                     )}
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-800 leading-tight">
+                    <h4 className="text-xs font-bold text-zinc-800 leading-tight group-hover:text-rose-500 transition-colors">
                       {friend.name}
                     </h4>
                     <span className="text-[10px] text-green-500 font-bold flex items-center">
@@ -134,7 +137,10 @@ export function HomeTab({
                 {/* Message Action Button (as in image) */}
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => onOpenChat(friend.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenChat(friend.id);
+                  }}
                   className="flex items-center space-x-1.5 border border-zinc-200 hover:bg-rose-50 hover:border-rose-200 text-zinc-600 hover:text-rose-500 px-3 py-1.5 rounded-full transition-all duration-200"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />

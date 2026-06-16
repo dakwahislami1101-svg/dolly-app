@@ -12,11 +12,12 @@ interface NearMeTabProps {
   people: Person[];
   onOpenChat: (personId: string) => void;
   onSendWave: (personId: string) => void;
+  onViewProfile: (personId: string) => void;
 }
 
 type GenderFilter = 'Semua' | 'Perempuan' | 'Laki-laki';
 
-export function NearMeTab({ people, onOpenChat, onSendWave }: NearMeTabProps) {
+export function NearMeTab({ people, onOpenChat, onSendWave, onViewProfile }: NearMeTabProps) {
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('Semua');
   const [radarScanning, setRadarScanning] = useState(false);
   const [wavedIds, setWavedIds] = useState<string[]>([]);
@@ -136,13 +137,16 @@ export function NearMeTab({ people, onOpenChat, onSendWave }: NearMeTabProps) {
                 className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-[0_4px_12px_rgba(0,0,0,0.02)] flex items-start justify-between hover:border-rose-100 transition-colors"
               >
                 {/* User Description Info */}
-                <div className="flex items-start space-x-3 min-w-0">
+                <div 
+                  className="flex items-start space-x-3 min-w-0 cursor-pointer group"
+                  onClick={() => onViewProfile(person.id)}
+                >
                   <div className="relative w-11 h-11 shrink-0 mt-0.5_">
                     <img
                       src={person.avatar}
                       alt={person.name}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover rounded-full border border-zinc-100"
+                      className="w-full h-full object-cover rounded-full border border-zinc-100 group-hover:scale-105 transition-transform duration-200"
                     />
                     {person.online && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
@@ -151,7 +155,7 @@ export function NearMeTab({ people, onOpenChat, onSendWave }: NearMeTabProps) {
 
                   <div className="min-w-0 text-left">
                     <div className="flex items-center space-x-1.5 flex-wrap">
-                      <span className="text-xs font-bold text-zinc-800 leading-tight">
+                      <span className="text-xs font-bold text-zinc-800 leading-tight group-hover:text-rose-500 transition-colors">
                         {person.name}
                       </span>
                       <span className={`text-[8.5px] font-black text-white px-1.5 py-0.2 rounded-full flex items-center shrink-0 ${

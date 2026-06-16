@@ -12,6 +12,7 @@ import { NearMeTab } from './components/NearMeTab';
 import { MomentsTab } from './components/MomentsTab';
 import { ProfileTab } from './components/ProfileTab';
 import { AuthScreen } from './components/AuthScreen';
+import { UserProfileModal } from './components/UserProfileModal';
 import { motion, AnimatePresence } from 'motion/react';
 
 import {
@@ -72,6 +73,8 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
+  const [selectedPersonProfile, setSelectedPersonProfile] = useState<Person | null>(null);
+  const [wavedIds, setWavedIds] = useState<string[]>([]);
   
   const [myProfile, setMyProfile] = useState({
     name: 'Dolly User',
@@ -783,6 +786,13 @@ export default function App() {
     ));
   };
 
+  const handleViewProfile = (personId: string) => {
+    const person = people.find(p => p.id === personId) || INITIAL_PEOPLE.find(p => p.id === personId);
+    if (person) {
+      setSelectedPersonProfile(person);
+    }
+  };
+
   // Send message handler inside ChatRoom
   const handleSendMessage = async (text: string, type: 'text' | 'image' | 'voice' = 'text', mediaUrl?: string, incomingSenderId?: string) => {
     if (!activeChatId) return;
@@ -907,6 +917,10 @@ export default function App() {
   const handleSendWave = async (personId: string) => {
     const targetPerson = people.find(p => p.id === personId);
     if (!targetPerson) return;
+
+    if (!wavedIds.includes(personId)) {
+      setWavedIds(prev => [...prev, personId]);
+    }
 
     showToast(`Melambaikan tangan ke ${targetPerson.name}! 👋`, 'info');
 
@@ -1447,6 +1461,7 @@ export default function App() {
             messages={messages}
             onBack={() => setActiveChatId(null)}
             onSendMessage={handleSendMessage}
+            onViewProfile={handleViewProfile}
           />
         ) : (
           // Standard Tab Switch layouts
@@ -1460,6 +1475,7 @@ export default function App() {
                   onOpenChat={handleOpenChat}
                   onAcceptRequest={handleAcceptRequest}
                   onRejectRequest={handleRejectRequest}
+                  onViewProfile={handleViewProfile}
                 />
               )}
               {activeTab === 'chat' && (
@@ -1474,6 +1490,7 @@ export default function App() {
                   people={people}
                   onOpenChat={handleOpenChat}
                   onSendWave={handleSendWave}
+                  onViewProfile={handleViewProfile}
                 />
               )}
               {activeTab === 'moments' && (
@@ -1485,6 +1502,7 @@ export default function App() {
                   onCommentStatus={handleCommentStatus}
                   onPostStatus={handlePostStatus}
                   onDeleteStatus={handleDeleteStatus}
+                  onViewProfile={handleViewProfile}
                 />
               )}
               {activeTab === 'profile' && (
@@ -1562,6 +1580,16 @@ export default function App() {
           </>
         )}
       </div>
+
+      {/* User Profile Details Overlay Modal for other people */}
+      <UserProfileModal
+        person={selectedPersonProfile}
+        isOpen={selectedPersonProfile !== null}
+        onClose={() => setSelectedPersonProfile(null)}
+        onOpenChat={handleOpenChat}
+        onSendWave={handleSendWave}
+        hasWaved={selectedPersonProfile ? wavedIds.includes(selectedPersonProfile.id) : false}
+      />
     </MobileFrame>
   );
 }

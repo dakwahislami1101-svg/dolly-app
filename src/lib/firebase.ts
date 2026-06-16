@@ -5,11 +5,14 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
   experimentalForceLongPolling: true,
 }, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth();
@@ -110,8 +113,11 @@ export async function validateConnection() {
     await getDocFromServer(doc(db, 'test', 'connection'));
     console.log('Firebase connection verified.');
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes('offline') || errorMsg.includes('unavailable') || errorMsg.includes('Could not reach') || errorMsg.includes('failed')) {
+      console.warn('Firebase connection test: Operating in offline/local guest state. Cache fallback is active.', errorMsg);
+    } else {
+      console.warn('Firebase routing check:', errorMsg);
     }
   }
 }

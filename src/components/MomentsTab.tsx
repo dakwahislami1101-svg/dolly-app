@@ -16,6 +16,7 @@ interface MomentsTabProps {
   onCommentStatus: (id: string, commentText: string) => void;
   onPostStatus: (text: string, imageUrl?: string) => void;
   onDeleteStatus: (id: string) => void;
+  onViewProfile: (personId: string) => void;
 }
 
 export function MomentsTab({
@@ -26,6 +27,7 @@ export function MomentsTab({
   onCommentStatus,
   onPostStatus,
   onDeleteStatus,
+  onViewProfile,
 }: MomentsTabProps) {
   const [isOpenCreator, setIsOpenCreator] = useState(false);
   const [newStatusText, setNewStatusText] = useState('');
@@ -246,15 +248,22 @@ export function MomentsTab({
             >
               {/* Creator details */}
               <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center space-x-3">
+                <div 
+                  className={`flex items-center space-x-3 ${status.personId !== 'me' ? 'cursor-pointer group' : ''}`}
+                  onClick={() => {
+                    if (status.personId !== 'me') {
+                      onViewProfile(status.personId);
+                    }
+                  }}
+                >
                   <img
                     src={status.authorAvatar}
                     alt={status.authorName}
                     referrerPolicy="no-referrer"
-                    className="w-10 h-10 object-cover rounded-full border border-zinc-100 shrink-0"
+                    className="w-10 h-10 object-cover rounded-full border border-zinc-100 shrink-0 group-hover:scale-105 transition-all duration-200"
                   />
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-800 leading-tight">
+                    <h4 className="text-xs font-bold text-zinc-800 leading-tight group-hover:text-rose-500 transition-colors">
                       {status.authorName}
                     </h4>
                     <span className="text-[9px] text-zinc-400 font-semibold flex items-center">
