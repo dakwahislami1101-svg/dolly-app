@@ -1142,6 +1142,32 @@ export default function App() {
     showToast('Status momen berhasil diposting!', 'success');
   };
 
+  // Delete status or hide it from the feed
+  const handleDeleteStatus = async (statusId: string) => {
+    const targetStatus = statuses.find((st) => st.id === statusId);
+    if (!targetStatus) return;
+
+    const isOwner = targetStatus.personId === 'me' || (user && targetStatus.personId === user.uid);
+
+    if (isOwner) {
+      if (!isLocalMode) {
+        try {
+          await deleteDoc(doc(db, 'statuses', statusId));
+          showToast('Status berhasil dihapus secara permanen!', 'success');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `statuses/${statusId}`);
+        }
+      } else {
+        setStatuses((prev) => prev.filter((st) => st.id !== statusId));
+        showToast('Status berhasil dihapus!', 'success');
+      }
+    } else {
+      // Hide from user feed locally
+      setStatuses((prev) => prev.filter((st) => st.id !== statusId));
+      showToast('Status disembunyikan dari feed Anda! 🙈', 'info');
+    }
+  };
+
   // Edit user custom profile details
   const handleUpdateProfile = async (name: string, bio: string, avatar?: string) => {
     if (!isLocalMode) {
@@ -1454,9 +1480,11 @@ export default function App() {
                 <MomentsTab
                   statuses={statuses}
                   myProfile={myProfile}
+                  user={user}
                   onLikeStatus={handleLikeStatus}
                   onCommentStatus={handleCommentStatus}
                   onPostStatus={handlePostStatus}
+                  onDeleteStatus={handleDeleteStatus}
                 />
               )}
               {activeTab === 'profile' && (

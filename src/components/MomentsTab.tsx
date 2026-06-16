@@ -5,27 +5,32 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Heart, MessageSquare, Flame, MapPin, Send, Plus, X, Image as ImageIcon } from 'lucide-react';
+import { Heart, MessageSquare, Flame, MapPin, Send, Plus, X, Image as ImageIcon, Trash2, EyeOff } from 'lucide-react';
 import { Status, Person } from '../types';
 
 interface MomentsTabProps {
   statuses: Status[];
   myProfile: { name: string; avatar: string };
+  user?: any;
   onLikeStatus: (id: string, name: string) => void;
   onCommentStatus: (id: string, commentText: string) => void;
   onPostStatus: (text: string, imageUrl?: string) => void;
+  onDeleteStatus: (id: string) => void;
 }
 
 export function MomentsTab({
   statuses,
   myProfile,
+  user,
   onLikeStatus,
   onCommentStatus,
   onPostStatus,
+  onDeleteStatus,
 }: MomentsTabProps) {
   const [isOpenCreator, setIsOpenCreator] = useState(false);
   const [newStatusText, setNewStatusText] = useState('');
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+  const [zoomPhotoUrl, setZoomPhotoUrl] = useState<string | null>(null);
   
   // Inline comment inputs mapped by status ID
   const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
@@ -240,22 +245,51 @@ export function MomentsTab({
               className="bg-white rounded-3xl p-4 border border-zinc-100 shadow-[0_4px_16px_rgba(0,0,0,0.02)] flex flex-col"
             >
               {/* Creator details */}
-              <div className="flex items-center space-x-3 mb-2.5">
-                <img
-                  src={status.authorAvatar}
-                  alt={status.authorName}
-                  referrerPolicy="no-referrer"
-                  className="w-10 h-10 object-cover rounded-full border border-zinc-100 shrink-0"
-                />
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-800 leading-tight">
-                    {status.authorName}
-                  </h4>
-                  <span className="text-[9px] text-zinc-400 font-semibold flex items-center">
-                    <MapPin className="w-2.5 h-2.5 text-zinc-300 mr-0.5" />
-                    Kebagusan • {status.timestamp}
-                  </span>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={status.authorAvatar}
+                    alt={status.authorName}
+                    referrerPolicy="no-referrer"
+                    className="w-10 h-10 object-cover rounded-full border border-zinc-100 shrink-0"
+                  />
+                  <div>
+                    <h4 className="text-xs font-bold text-zinc-800 leading-tight">
+                      {status.authorName}
+                    </h4>
+                    <span className="text-[9px] text-zinc-400 font-semibold flex items-center">
+                      <MapPin className="w-2.5 h-2.5 text-zinc-300 mr-0.5" />
+                      Kebagusan • {status.timestamp}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Delete or Hide action */}
+                {(() => {
+                  const isMyStatus = status.personId === 'me' || (user && status.personId === user.uid);
+                  return (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (confirm(isMyStatus ? 'Apakah Anda yakin ingin menghapus status ini secara permanen?' : 'Sembunyikan status ini dari feed Anda?')) {
+                          onDeleteStatus(status.id);
+                        }
+                      }}
+                      title={isMyStatus ? 'Hapus Status Momen' : 'Sembunyikan Status Momen'}
+                      className={`p-2 rounded-full cursor-pointer transition-all ${
+                        isMyStatus 
+                          ? 'text-rose-400 hover:text-rose-600 hover:bg-rose-50/50' 
+                          : 'text-zinc-300 hover:text-zinc-500 hover:bg-zinc-100/50'
+                      }`}
+                    >
+                      {isMyStatus ? (
+                        <Trash2 className="w-4 h-4" />
+                      ) : (
+                        <EyeOff className="w-4 h-4" />
+                      )}
+                    </motion.button>
+                  );
+                })()}
               </div>
 
               {/* Status Message Text */}
@@ -265,13 +299,21 @@ export function MomentsTab({
 
               {/* Optional Photo attachment block */}
               {status.image && (
-                <div className="rounded-2xl overflow-hidden mb-3 border border-zinc-50 leading-none">
+                <div 
+                  className="rounded-2xl overflow-hidden mb-3 border border-zinc-100 leading-none cursor-pointer group relative overflow-hidden"
+                  onClick={() => setZoomPhotoUrl(status.image)}
+                >
                   <img
                     src={status.image}
                     alt="Moment post representation"
                     referrerPolicy="no-referrer"
-                    className="w-full max-h-[190px] object-cover"
+                    className="w-full max-h-[190px] object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                   />
+                  <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                    <span className="bg-black/50 text-white text-[9px] font-bold px-2 py-1 rounded-full backdrop-blur-xs">
+                      Klik untuk Memperbesar 🔍
+                    </span>
+                  </div>
                 </div>
               )}
 
@@ -342,6 +384,57 @@ export function MomentsTab({
           );
         })}
       </div>
+
+      {/* Photo Zoom Viewer Overlay */}
+      <AnimatePresence>
+        {zoomPhotoUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 z-[99999]"
+            onClick={() => setZoomPhotoUrl(null)}
+          >
+            {/* Top Bar Controls */}
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-between text-white z-50">
+              <span className="text-[10px] font-mono tracking-widest uppercase text-white/50">Dolly Penampil Foto</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomPhotoUrl(null);
+                }}
+                className="p-2 hover:bg-white/10 active:scale-95 transition-all text-white rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-lg cursor-pointer"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Image Container with spring scale transition */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 180 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-full max-h-[75vh] flex items-center justify-center"
+            >
+              <img
+                src={zoomPhotoUrl}
+                alt="Status Media Berukuran Penuh"
+                referrerPolicy="no-referrer"
+                className="max-w-full max-h-[70vh] object-contain rounded-2xl shadow-2xl border border-white/10 select-none pointer-events-auto"
+              />
+            </motion.div>
+
+            {/* Instruction Footer */}
+            <div className="absolute bottom-6 text-center select-none">
+              <span className="text-white/40 text-[10px] font-medium tracking-wide">
+                Ketuk di mana saja untuk kembali
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
