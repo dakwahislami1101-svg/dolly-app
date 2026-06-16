@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dolly</string>
+    <string name="title_activity_main">Dolly</string>
+    <string name="package_name">id.web.dolly.app</string>
+    <string name="custom_url_scheme">id.web.dolly.app</string>
+</resources>
