@@ -57,6 +57,12 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
+      # Step 8.2: Rebuild Brand Assets dynamically from SVG to prevent file format and CRLF corruption
+      - name: Rebuild Brand Assets
+        run: |
+          node convert.js
+          npx @capacitor/assets generate --android
+
       # Step 8.5: Verify and Restore Gradle Wrapper if Corrupted by Git
       - name: Verify and Restore Gradle Wrapper
         run: |
