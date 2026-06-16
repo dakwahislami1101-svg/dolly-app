@@ -83,6 +83,11 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'normal' } | null>(null);
   const [user, setUser] = useState<any>(null);
 
+  const isLocalMode = !user || 
+    user.uid === 'guest_user' || 
+    (typeof user.uid === 'string' && user.uid.startsWith('google_user_')) || 
+    sessionStorage.getItem('dolly_guest_active') === 'true';
+
   const showToast = (message: string, type: 'success' | 'info' | 'normal' = 'success') => {
     setToast({ message, type });
     setTimeout(() => {
@@ -265,7 +270,7 @@ export default function App() {
 
   // Sync people and profiles from Firestore in real-time online
   useEffect(() => {
-    if (!user || user.uid === 'guest_user') return;
+    if (isLocalMode) return;
 
     const unsubscribe = onSnapshot(collection(db, 'profiles'), async (snapshot) => {
       if (snapshot.empty) {
@@ -313,7 +318,7 @@ export default function App() {
 
   // Sync statuses/moments from Firestore in real-time online
   useEffect(() => {
-    if (!user || user.uid === 'guest_user') return;
+    if (isLocalMode) return;
 
     const unsubscribe = onSnapshot(collection(db, 'statuses'), async (snapshot) => {
       if (snapshot.empty) {
@@ -385,7 +390,7 @@ export default function App() {
 
   // Sync requests from Firestore online
   useEffect(() => {
-    if (!user || user.uid === 'guest_user') return;
+    if (isLocalMode) return;
 
     const unsubscribe = onSnapshot(collection(db, 'requests'), (snapshot) => {
       if (snapshot.empty) {
@@ -450,7 +455,7 @@ export default function App() {
 
   // Sync Chats from Firestore online
   useEffect(() => {
-    if (!user || user.uid === 'guest_user') return;
+    if (isLocalMode) return;
 
     const unsubscribe = onSnapshot(collection(db, 'chats'), (snapshot) => {
       if (snapshot.empty) {
@@ -509,7 +514,7 @@ export default function App() {
 
   // Sync Messages from Firestore online
   useEffect(() => {
-    if (!user || !activeChatId || user.uid === 'guest_user') return;
+    if (isLocalMode || !activeChatId) return;
 
     const q = query(collection(db, 'chats', activeChatId, 'messages'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -654,7 +659,7 @@ export default function App() {
     const request = requests.find((r) => r.id === requestId);
     if (!request) return;
 
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         await updateDoc(doc(db, 'requests', requestId), { status: 'accepted' });
         const greetingMsgId = `msg_hello_${Date.now()}`;
@@ -744,7 +749,7 @@ export default function App() {
   // Friend Request Rejected handler
   const handleRejectRequest = async (requestId: string) => {
     const request = requests.find((r) => r.id === requestId);
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         await updateDoc(doc(db, 'requests', requestId), { status: 'rejected' });
         showToast('Permintaan pertemanan ditolak.', 'normal');
@@ -790,7 +795,7 @@ export default function App() {
     const msgId = `msg_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const effectiveSenderId = incomingSenderId || (mediaUrl ? activeChatId : 'me');
 
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         const newMsgPayload = {
           id: msgId,
@@ -905,7 +910,7 @@ export default function App() {
 
     showToast(`Melambaikan tangan ke ${targetPerson.name}! 👋`, 'info');
 
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         const reqId = `req_${personId}_${Date.now()}`;
         await setDoc(doc(db, 'requests', reqId), {
@@ -1027,7 +1032,7 @@ export default function App() {
 
   // Like Status handler inside MomentsTab
   const handleLikeStatus = async (statusId: string, userName: string) => {
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         const targetStatus = statuses.find(s => s.id === statusId);
         if (!targetStatus) return;
@@ -1068,7 +1073,7 @@ export default function App() {
       createdAt: 'Baru saja'
     };
 
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         await setDoc(doc(db, 'statuses', statusId, 'comments', commId), commentObj);
         showToast('Komentar berhasil ditambahkan!', 'success');
@@ -1102,7 +1107,7 @@ export default function App() {
 
   // Create customized Status handler inside MomentsTab
   const handlePostStatus = async (text: string, imageUrl?: string) => {
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         const statusId = `status_self_${Date.now()}`;
         await setDoc(doc(db, 'statuses', statusId), {
@@ -1139,7 +1144,7 @@ export default function App() {
 
   // Edit user custom profile details
   const handleUpdateProfile = async (name: string, bio: string, avatar?: string) => {
-    if (user && user.uid !== 'guest_user') {
+    if (!isLocalMode) {
       try {
         const payload: any = { name, bio };
         if (avatar) payload.avatar = avatar;
