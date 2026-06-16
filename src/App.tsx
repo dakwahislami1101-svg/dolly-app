@@ -90,6 +90,106 @@ export default function App() {
     }, 3200);
   };
 
+  // Notification banner HUD state
+  const [activeSystemNotification, setActiveSystemNotification] = useState<{
+    id: string;
+    title: string;
+    body: string;
+    avatar?: string;
+    senderId?: string;
+  } | null>(null);
+
+  const prevChatsRef = React.useRef<Chat[]>([]);
+
+  // Soundless or chime notification helper
+  const triggerSystemPushNotification = (title: string, body: string, avatar?: string, senderId?: string) => {
+    // Play a dual-tone synthetic chime matching device alerts natively inside applet
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Note D5
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12); // Note A5
+      
+      gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.4);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.4);
+    } catch (_) {}
+
+    // Vibrate device if active (120ms burst)
+    if ('vibrate' in navigator) {
+      navigator.vibrate([120]);
+    }
+
+    // Set inside app top banner
+    const notifId = String(Date.now());
+    setActiveSystemNotification({
+      id: notifId,
+      title,
+      body,
+      avatar,
+      senderId
+    });
+
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+      setActiveSystemNotification((current) => (current?.id === notifId ? null : current));
+    }, 5000);
+
+    // Request permissions and trigger Native OS desktop alert banners
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          const systemNotif = new Notification(title, {
+            body,
+            icon: '/dolly_logo.jpg',
+            tag: senderId || 'dolly-notif'
+          });
+          systemNotif.onclick = () => {
+            window.focus();
+            if (senderId) {
+              setActiveTab('chat');
+              setActiveChatId(senderId);
+            }
+            systemNotif.close();
+          };
+        } catch (e) {
+          console.warn('Silent local system notification build delay:', e);
+        }
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    }
+
+    // Direct Capacitor Bridge support trigger automatically
+    try {
+      const { LocalNotifications } = (window as any).Capacitor?.Plugins || {};
+      if (LocalNotifications) {
+        LocalNotifications.schedule({
+          notifications: [
+            {
+              title: title,
+              body: body,
+              id: Math.floor(Math.random() * 1000000),
+              schedule: { at: new Date(Date.now() + 10) },
+              sound: null,
+              attachments: null,
+              actionTypeId: "",
+              extra: { senderId }
+            }
+          ]
+        });
+      }
+    } catch (_) {}
+  };
+
   // Firebase auth & connection validation bootstrap
   useEffect(() => {
     validateConnection();
@@ -379,6 +479,25 @@ export default function App() {
             unreadCount: data.unreadCount || 0
           });
         });
+
+        // Trigger native notification banner when unread messages increase on Firestore
+        if (prevChatsRef.current.length > 0) {
+          chatsList.forEach((newC) => {
+            const oldC = prevChatsRef.current.find((oc) => oc.id === newC.id);
+            if (newC.unreadCount > 0 && (!oldC || oldC.lastMessage !== newC.lastMessage || oldC.unreadCount < newC.unreadCount)) {
+              if (activeChatId !== newC.personId) {
+                const targetMatch = people.find((p) => p.id === newC.personId);
+                triggerSystemPushNotification(
+                  targetMatch ? targetMatch.name : 'Dolly Chat',
+                  newC.lastMessage,
+                  targetMatch?.avatar,
+                  newC.personId
+                );
+              }
+            }
+          });
+        }
+        prevChatsRef.current = chatsList;
         setChats(chatsList);
       }
     }, (err) => {
@@ -386,7 +505,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, activeChatId, people]);
 
   // Sync Messages from Firestore online
   useEffect(() => {
@@ -660,7 +779,7 @@ export default function App() {
   };
 
   // Send message handler inside ChatRoom
-  const handleSendMessage = async (text: string, type: 'text' | 'image' | 'voice' = 'text', mediaUrl?: string) => {
+  const handleSendMessage = async (text: string, type: 'text' | 'image' | 'voice' = 'text', mediaUrl?: string, incomingSenderId?: string) => {
     if (!activeChatId) return;
 
     const timeString = new Date().toLocaleTimeString('id-ID', {
@@ -669,15 +788,16 @@ export default function App() {
     });
 
     const msgId = `msg_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const effectiveSenderId = incomingSenderId || (mediaUrl ? activeChatId : 'me');
 
     if (user && user.uid !== 'guest_user') {
       try {
         const newMsgPayload = {
           id: msgId,
-          senderId: mediaUrl ? activeChatId : 'me',
+          senderId: effectiveSenderId,
           text: type === 'text' ? text : type === 'image' ? 'Mengirim foto...' : 'Pesan suara',
           timestamp: timeString,
-          unread: false,
+          unread: incomingSenderId ? true : false,
           type,
           mediaUrl: mediaUrl || ''
         };
@@ -689,13 +809,24 @@ export default function App() {
         await setDoc(doc(db, 'chats', activeChatId, 'messages', msgId), newMsgPayload);
 
         const lastText = type === 'image' ? '📷 Foto' : type === 'voice' ? '🎙️ Pesan Suara' : text;
+        const isFocusing = activeChatId === text && activeTab === 'chat';
         await setDoc(doc(db, 'chats', activeChatId), {
           id: activeChatId,
           personId: activeChatId,
           lastMessage: lastText,
           timestamp: timeString,
-          unreadCount: 0
+          unreadCount: (incomingSenderId && !isFocusing) ? 1 : 0
         });
+
+        if (incomingSenderId && (activeChatId !== incomingSenderId || activeTab !== 'chat')) {
+          const sender = people.find(p => p.id === incomingSenderId);
+          triggerSystemPushNotification(
+            sender ? sender.name : 'Teman Baru',
+            type === 'image' ? '📷 Menyematkan Foto' : type === 'voice' ? '🎙️ Pesan Suara' : text,
+            sender?.avatar,
+            incomingSenderId
+          );
+        }
         return;
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, `chats/${activeChatId}`);
@@ -704,10 +835,10 @@ export default function App() {
 
     const newMsg: Message = {
       id: msgId,
-      senderId: mediaUrl ? activeChatId : 'me', // if mediaUrl comes from simulation it might be the sender
+      senderId: effectiveSenderId,
       text: type === 'text' ? text : type === 'image' ? 'Mengirim foto...' : 'Pesan suara',
       timestamp: timeString,
-      unread: false,
+      unread: incomingSenderId ? true : false,
       type,
       mediaUrl
     };
@@ -755,6 +886,16 @@ export default function App() {
         ];
       }
     });
+
+    if (incomingSenderId && (activeChatId !== incomingSenderId || activeTab !== 'chat')) {
+      const sender = people.find(p => p.id === incomingSenderId);
+      triggerSystemPushNotification(
+        sender ? sender.name : 'Teman Baru',
+        type === 'image' ? '📷 Menyematkan Foto' : type === 'voice' ? '🎙️ Pesan Suara' : text,
+        sender?.avatar,
+        incomingSenderId
+      );
+    }
   };
 
   // Sapa/Wave Wave sender handler inside NearMeTab
@@ -804,6 +945,16 @@ export default function App() {
             });
 
             showToast(`Menerima balasan sapaan dari ${targetPerson.name}! 💬`, 'success');
+
+            // Trigger notification
+            if (activeChatId !== personId || activeTab !== 'chat') {
+              triggerSystemPushNotification(
+                targetPerson.name,
+                `Hai! Makasih ya udah sapa aku lambaian tangan. Hehe 😊 ada apa nih? Salam kenal ya!`,
+                targetPerson.avatar,
+                personId
+              );
+            }
           } catch (e) {
             console.error('Failed to simulate reply:', e);
           }
@@ -861,6 +1012,16 @@ export default function App() {
       });
 
       showToast(`Menerima balasan sapaan dari ${targetPerson.name}! 💬`, 'success');
+
+      // Trigger notification
+      if (activeChatId !== personId || activeTab !== 'chat') {
+        triggerSystemPushNotification(
+          targetPerson.name,
+          replyMsg.text,
+          targetPerson.avatar,
+          personId
+        );
+      }
     }, 3200);
   };
 
@@ -1187,6 +1348,53 @@ export default function App() {
 
   return (
     <MobileFrame>
+      {/* Custom sliding head-up top push notification banner */}
+      <AnimatePresence>
+        {activeSystemNotification && (
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 0.99 }}
+            exit={{ y: -100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 120 }}
+            onClick={() => {
+              if (activeSystemNotification.senderId) {
+                setActiveTab('chat');
+                setActiveChatId(activeSystemNotification.senderId);
+              }
+              setActiveSystemNotification(null);
+            }}
+            id="native_like_headsup_banner"
+            className="absolute top-3 left-3 right-3 bg-zinc-900 shadow-2xl text-white px-4 py-3 rounded-2xl flex items-center space-x-3 border border-white/10 z-[9999] hover:bg-zinc-855 cursor-pointer select-none"
+          >
+            {activeSystemNotification.avatar ? (
+              <img
+                src={activeSystemNotification.avatar}
+                alt="Notification Sender Profile Avatar"
+                className="w-10 h-10 rounded-full object-cover shrink-0 border border-white/20 shadow-xs"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-rose-505 flex items-center justify-center text-white shrink-0 font-black shadow-xs">
+                <span>D</span>
+              </div>
+            )}
+            <div className="flex-1 min-w-0 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest leading-none">Dolly Pemberitahuan</span>
+                <span className="text-[8px] font-medium text-white/40 font-mono">Sekarang</span>
+              </div>
+              <h4 className="text-xs font-black truncate leading-tight text-white mt-1">{activeSystemNotification.title}</h4>
+              <p className="text-[10px] text-zinc-300 font-medium truncate leading-normal">{activeSystemNotification.body}</p>
+            </div>
+            
+            {/* Direct indicator icon */}
+            <div className="text-white/35 shrink-0 bg-white/5 p-1 rounded-lg">
+              <MessageCircle className="w-4 h-4 text-rose-300 animate-pulse" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Toast Alert Popups UI indicator */}
       {toast && (
         <div className="absolute top-16 left-4 right-4 z-50 pointer-events-none flex items-center justify-center">

@@ -9,6 +9,18 @@
   "orientation": "portrait",
   "icons": [
     {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/dolly_logo.jpg",
       "type": "image/jpeg",
       "sizes": "1000x1000"

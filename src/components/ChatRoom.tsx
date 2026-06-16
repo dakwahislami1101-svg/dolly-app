@@ -13,7 +13,7 @@ interface ChatRoomProps {
   person: Person;
   messages: Message[];
   onBack: () => void;
-  onSendMessage: (text: string, type?: 'text' | 'image' | 'voice', mediaUrl?: string) => void;
+  onSendMessage: (text: string, type?: 'text' | 'image' | 'voice', mediaUrl?: string, incomingSenderId?: string) => void;
 }
 
 const EMOJI_SHORTCUTS = ['😀', '😍', '👍', '🙏', '🔥', '🍜', '☕', '😂'];
@@ -53,7 +53,7 @@ export function ChatRoom({ person, messages, onBack, onSendMessage }: ChatRoomPr
     setTimeout(() => {
       setIsTyping(false);
       const replyText = getSmartReply(person.id, textToSend);
-      onSendMessage(replyText, 'text');
+      onSendMessage(replyText, 'text', undefined, person.id);
     }, typingDuration);
   };
 
@@ -77,7 +77,7 @@ export function ChatRoom({ person, messages, onBack, onSendMessage }: ChatRoomPr
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
-      onSendMessage('Waaahh fotonya keren bangett! Dimana itu? 😍', 'text');
+      onSendMessage('Waaahh fotonya keren bangett! Dimana itu? 😍', 'text', undefined, person.id);
     }, 2000);
   };
 
@@ -89,7 +89,7 @@ export function ChatRoom({ person, messages, onBack, onSendMessage }: ChatRoomPr
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
-      onSendMessage('Suaramu bagus juga ya, kedengerannya ramah banget wkwk 🙈', 'text');
+      onSendMessage('Suaramu bagus juga ya, kedengerannya ramah banget wkwk 🙈', 'text', undefined, person.id);
     }, 2000);
   };
 
