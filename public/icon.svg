@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient: Luxury Rose Red to Passionate Coral Pink -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff3366" />
+      <stop offset="50%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#e11d48" />
+    </linearGradient>
+
+    <!-- Warm White to Pink-White Gradient for the Main Chat Bubble -->
+    <linearGradient id="bubbleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#ffeef1" />
+    </linearGradient>
+
+    <!-- Soft Pastel Glowing Gradient for the background partner heart -->
+    <linearGradient id="partnerHeart" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fda4af" />
+      <stop offset="100%" stop-color="#fb7185" />
+    </linearGradient>
+
+    <!-- Main Vibrant Heart Gradient -->
+    <linearGradient id="activeHeart" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4b72" />
+      <stop offset="100%" stop-color="#ff1a40" />
+    </linearGradient>
+
+    <!-- Smooth Drop Shadow for iOS-alike premium depth -->
+    <filter id="premiumShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#5c0017" flood-opacity="0.25" />
+    </filter>
+
+    <!-- Subtle Glow around the Active Heart Connection -->
+    <filter id="heartGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Base Squircle App Background Tile (Applies to all modern platform launcher icons) -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGradient)" />
+
+  <!-- Premium Inner Specular Ring -->
+  <rect x="14" y="14" width="484" height="484" rx="106" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-opacity="0.18" />
+
+  <!-- Main Styled Logo Elements with Premium Depth Shadow -->
+  <g filter="url(#premiumShadow)">
+    <!-- Base Cozy Chat Bubble for Social & Moments Discovery -->
+    <path d="M 125,165 
+             C 125,115 165,75 215,75 
+             L 297,75 
+             C 347,75 387,115 387,165 
+             L 387,275 
+             C 387,325 347,365 297,365 
+             L 190,365 
+             L 134,421 
+             C 123,432 110,424 110,410 
+             L 110,365 
+             C 110,365 125,365 125,365 
+             C 125,365 125,230 125,165 Z" 
+          fill="url(#bubbleGradient)" />
+
+    <!-- Beautiful Interlocking Connection Hearts representing Dating & Matching -->
+    <!-- Partner Heart (Representing Others / Social Environment) -->
+    <path d="M 235,165 
+             C 212,142 176,142 153,165 
+             C 130,188 130,224 153,247 
+             L 235,329 
+             L 317,247 
+             C 340,224 340,188 317,165 
+             C 294,142 258,142 235,165 Z" 
+          fill="url(#partnerHeart)" 
+          opacity="0.82" />
+
+    <!-- Active User Connect Heart (Vibrant, Glows to represent Love & Attraction) -->
+    <path d="M 275,185 
+             C 255,165 221,165 201,185 
+             C 181,205 181,239 201,259 
+             L 275,333 
+             L 349,259 
+             C 369,239 369,205 349,185 
+             C 329,165 295,165 275,185 Z" 
+          fill="url(#activeHeart)" 
+          filter="url(#heartGlow)" />
+
+    <!-- Cute Connection / Synergy Bubbles -->
+    <circle cx="342" cy="125" r="14" fill="#ff4b72" />
+    <circle cx="342" cy="125" r="8" fill="#ffffff" />
+    
+    <circle cx="210" cy="115" r="8" fill="#fda4af" opacity="0.9" />
+    <circle cx="175" cy="135" r="5" fill="#f43f5e" opacity="0.6" />
+  </g>
+</svg>
