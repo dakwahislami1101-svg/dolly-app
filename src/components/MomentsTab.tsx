@@ -37,6 +37,48 @@ export function MomentsTab({
     'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&q=80&w=600&h=400'  // scenic road
   ];
 
+  const handleOwnPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 600;
+        const MAX_HEIGHT = 450;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setSelectedPhotoUrl(resizedDataUrl);
+        } else {
+          setSelectedPhotoUrl(event.target?.result as string);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handlePostSubmit = () => {
     if (!newStatusText.trim()) return;
     onPostStatus(newStatusText, selectedPhotoUrl || undefined);
@@ -123,7 +165,30 @@ export function MomentsTab({
                 <span className="text-[10px] font-bold text-zinc-400 block mb-1.5 uppercase tracking-wide">
                   Tambahkan Foto (Opsional)
                 </span>
-                <div className="flex space-x-1.5 overflow-x-auto pb-1.5">
+                <div className="flex space-x-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+                  {/* Custom upload tile */}
+                  <label className={`w-14 h-11 rounded-md cursor-pointer transition-all border-2 border-dashed flex flex-col items-center justify-center shrink-0 border-zinc-200 hover:border-rose-450 hover:bg-rose-50/20 relative overflow-hidden ${selectedPhotoUrl && !presetPhotos.includes(selectedPhotoUrl) ? 'border-rose-500 bg-rose-50/10' : ''}`}>
+                    <input
+                      type="file"
+                      id="upload_own_photo"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleOwnPhotoUpload}
+                    />
+                    {selectedPhotoUrl && !presetPhotos.includes(selectedPhotoUrl) ? (
+                      <img
+                        src={selectedPhotoUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <ImageIcon className="w-4 h-4 text-zinc-400" />
+                        <span className="text-[7px] text-zinc-400 font-extrabold mt-0.5">Upload</span>
+                      </div>
+                    )}
+                  </label>
+
                   {presetPhotos.map((photo, i) => (
                     <img
                       key={i}

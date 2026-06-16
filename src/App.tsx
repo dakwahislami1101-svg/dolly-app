@@ -12,6 +12,7 @@ import { NearMeTab } from './components/NearMeTab';
 import { MomentsTab } from './components/MomentsTab';
 import { ProfileTab } from './components/ProfileTab';
 import { AuthScreen } from './components/AuthScreen';
+import { motion, AnimatePresence } from 'motion/react';
 
 import {
   Home,
@@ -54,6 +55,15 @@ export default function App() {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'home' | 'chat' | 'near-me' | 'moments' | 'profile'>('home');
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Auto-dismiss Dolly splash screen after 3.8s intro animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3800);
+    return () => clearTimeout(timer);
+  }, []);
 
   // States
   const [people, setPeople] = useState<Person[]>([]);
@@ -1007,6 +1017,144 @@ export default function App() {
 
   // Active user details helper
   const chattingPerson = people.find((p) => p.id === activeChatId);
+
+  if (showSplash) {
+    return (
+      <MobileFrame>
+        <motion.div
+          id="dolly_splash_screen"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          onClick={() => setShowSplash(false)}
+          className="flex-1 w-full h-full bg-gradient-to-tr from-rose-500 via-pink-500 to-rose-600 flex flex-col items-center justify-between py-14 px-6 text-white cursor-pointer select-none relative overflow-hidden"
+        >
+          {/* Light flare overlay */}
+          <div className="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none" />
+
+          {/* Glowing grid effect in background */}
+          <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+
+          {/* Top visual elements */}
+          <div className="flex flex-col items-center mt-6">
+            <span className="text-[10px] font-black tracking-widest text-white/70 uppercase">
+              ✨ Selamat Datang Di Dolly ✨
+            </span>
+          </div>
+
+          {/* Central Logo and taglines */}
+          <div className="flex flex-col items-center justify-center -mt-10">
+            {/* Logo wrapper custom ripples */}
+            <div className="relative mb-6">
+              {/* Radar waves behind logo */}
+              <motion.div
+                animate={{
+                  scale: [1, 1.4, 1.8],
+                  opacity: [0.4, 0.15, 0],
+                }}
+                transition={{
+                  duration: 2.2,
+                  repeat: Infinity,
+                  ease: "easeOut",
+                }}
+                className="absolute inset-0 rounded-full bg-white"
+              />
+              <motion.div
+                animate={{
+                  scale: [1, 1.3, 1.6],
+                  opacity: [0.35, 0.1, 0],
+                }}
+                transition={{
+                  duration: 2.2,
+                  delay: 0.7,
+                  repeat: Infinity,
+                  ease: "easeOut",
+                }}
+                className="absolute inset-0 rounded-full bg-white"
+              />
+
+              <motion.div
+                initial={{ scale: 0.4, rotate: -25, opacity: 0 }}
+                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                transition={{
+                  type: "spring",
+                  damping: 10,
+                  stiffness: 85,
+                  delay: 0.15,
+                }}
+                className="relative z-10 w-28 h-28 rounded-[28px] overflow-hidden border-4 border-white shadow-2xl bg-white flex items-center justify-center"
+              >
+                <img
+                  src="/dolly_logo.jpg"
+                  alt="Dolly Logo"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </motion.div>
+            </div>
+
+            {/* Dolly Brand text with sliding effects */}
+            <motion.h1
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="font-black text-4xl text-white tracking-widest uppercase drop-shadow-[0_4px_12px_rgba(244,63,94,0.4)]"
+            >
+              Dolly
+            </motion.h1>
+
+            {/* Sub-texts / Taglines requested by user */}
+            <div className="mt-8 flex flex-col items-center space-y-2 text-center max-w-xs px-2">
+              <motion.div
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+                className="flex items-center space-x-1.5 bg-white/10 px-3 py-1.5 rounded-full border border-white/15"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse" />
+                <span className="text-xs font-extrabold tracking-wide text-rose-50 pr-0.5">
+                  Temukan Teman Baru
+                </span>
+              </motion.div>
+
+              <motion.div
+                initial={{ x: 30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 1.1, duration: 0.6 }}
+                className="flex items-center space-x-1.5 bg-white/10 px-3 py-1.5 rounded-full border border-white/15"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-pink-300 fill-pink-300 animate-pulse" />
+                <span className="text-xs font-extrabold tracking-wide text-rose-50 pr-0.5">
+                  Temukan Keseruan Baru
+                </span>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Bottom components */}
+          <div className="w-full flex flex-col items-center max-w-[200px] mb-4">
+            {/* Interactive Loading Bar */}
+            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden relative">
+              <motion.div
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 3.5, ease: "easeInOut" }}
+                className="h-full bg-white rounded-full shadow-[0_0_8px_white]"
+              />
+            </div>
+            
+            <span className="text-[9px] font-bold text-white/50 tracking-wider mt-3 uppercase">
+              Memuat Aplikasi Dolly...
+            </span>
+
+            <span className="text-[8px] font-medium text-white/45 mt-1.5 border border-white/10 px-2 py-0.5 rounded-md hover:bg-white/5 cursor-pointer">
+              Sentuh Untuk Melewati
+            </span>
+          </div>
+        </motion.div>
+      </MobileFrame>
+    );
+  }
 
   if (!user) {
     return (

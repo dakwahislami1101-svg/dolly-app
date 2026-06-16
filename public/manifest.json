@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.jpg",
+      "src": "/dolly_logo.jpg",
       "type": "image/jpeg",
       "sizes": "1000x1000"
     }

@@ -94,7 +94,7 @@ service cloud.firestore {
         && data.authorName is string && data.authorName.size() <= 100
         && data.authorAvatar is string && data.authorAvatar.size() <= 200000
         && data.text is string && data.text.size() <= 2000
-        && (!('image' in data) || (data.image is string && data.image.size() <= 1000))
+        && (!('image' in data) || (data.image is string && data.image.size() <= 250000))
         && (!('likes' in data) || (data.likes is list && data.likes.size() <= 200));
     }
 
