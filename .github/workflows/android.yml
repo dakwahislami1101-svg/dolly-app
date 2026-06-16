@@ -53,11 +53,21 @@ jobs:
             echo "Android platform already loaded."
           fi
 
-      # Step 7: Sync web assets and plugins to android native folder
+      # Step 8: Sync web assets and plugins to android native folder
       - name: Capacitor Sync
         run: npx cap sync android
 
-      # Step 8: Grant execution permissions for Gradle wrapper
+      # Step 8.5: Verify and Restore Gradle Wrapper if Corrupted by Git
+      - name: Verify and Restore Gradle Wrapper
+        run: |
+          if ! unzip -t android/gradle/wrapper/gradle-wrapper.jar >/dev/null 2>&1; then
+            echo "Gradle wrapper JAR is corrupt or invalid. Restoring clean binary from Gradle repository..."
+            curl -sSLo android/gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.14.3/gradle/wrapper/gradle-wrapper.jar
+          else
+            echo "Gradle wrapper JAR is verified and healthy."
+          fi
+
+      # Step 9: Grant execution permissions for Gradle wrapper
       - name: Grant Execute Permission for Gradlew
         run: chmod +x android/gradlew
 

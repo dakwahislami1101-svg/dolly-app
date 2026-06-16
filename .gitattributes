@@ -1,0 +1,12 @@
+# Enforce LF line endings for text files
+* text=auto eol=lf
+
+# Explicitly mark binary files as binary to avoid line-ending conversions/corruptions
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.svg text
